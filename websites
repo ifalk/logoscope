@@ -1,0 +1,10 @@
+# Add here the list of websites you want to parse
+
+http://www.lemonde.fr/rss/
+http://www.liberation.fr/rss/
+http://www.lefigaro.fr/rss/
+#http://www.humanite.fr/fil_rouge
+http://www.la-croix.com/rss	
+http://www.lequipe.fr/rss
+# n'utilise pas de balises <p>
+http://www.lesechos.fr/rss/
