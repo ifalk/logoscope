@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+
+
+<!-- question: 0  -->
+  <question type="category">
+    <category>
+        <text>$course$/Défaut pour Projet - Logoscope</text>
+
+    </category>
+  </question>
+
+
+
+<!-- question: 32692  -->
+  <question type="truefalse">
+    <name><text>Etat</text>
+</name>
+    <questiontext format="html">
+<text>Texte de la question : mot nouveau ?</text>
+    </questiontext>
+    <image></image>
+    <generalfeedback>
+<text>Explication pour la question.</text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>0</shuffleanswers>
+    <answer fraction="0">
+      <text>true</text>
+
+      <feedback>
+        <text>
+
+        </text>
+      </feedback>
+    </answer>
+    <answer fraction="100">
+      <text>false</text>
+
+      <feedback>
+        <text>
+
+        </text>
+      </feedback>
+    </answer>
+</question>
+
+
+</quiz>

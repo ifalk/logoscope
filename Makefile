@@ -51,6 +51,7 @@ TINY_CC_BIN=${TINY_CC_HOME}/bin
 TINY_CC_PL=${TINY_CC_HOME}/perl
 TINY_CC_ABBREV=${TINY_CC_HOME}/bin/abbrev
 
+
 TINY_CC_SOURCES=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/sources
 
 #CORPUS_NAME=${TODAY}
@@ -99,13 +100,14 @@ mv ${TEMP}/sources.txt ${RES_DIR}/${CORPUS_NAME}.sources
 tinyCC_number_sentences:
 	perl ${TINY_CC_PL}/numberIt.pl ${TEMP}/${CORPUS_NAME}.s > ${RES_DIR}/${CORPUS_NAME}.sentences
 
+KNOWN_MWES=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data/multiwords
 tinyCC_tokenize:
-	perl ${TINY_CC_PL}/tokenize_utf8.pl ${RES_DIR}/${CORPUS_NAME}.sentences ${TEMP}/${CORPUS_NAME}.tok #; \
-#perl ${TINY_CC_PL}/tok_multiwords_utf8.pl none ${TEMP}/none.tok
+	perl ${TINY_CC_PL}/tokenize_utf8.pl ${RES_DIR}/${CORPUS_NAME}.sentences ${TEMP}/${CORPUS_NAME}.tok ; \
+perl ${TINY_CC_PL}/tok_multiwords_utf8.pl ${KNOWN_MWES} ${TEMP}/multiwords.tok
 
 tinyCC_count:
 	perl ${TINY_CC_PL}/freqSingle.pl ${TEMP}/${CORPUS_NAME}.tok ${TEMP}/${CORPUS_NAME}.singlewords ;\
-perl ${TINY_CC_PL}/freqMulti.pl ${TEMP}/${CORPUS_NAME}.singlewords ${TEMP}/none.tok ${TEMP}/${CORPUS_NAME}.tok ${TEMP}/${CORPUS_NAME}.words
+perl ${TINY_CC_PL}/freqMulti.pl ${TEMP}/${CORPUS_NAME}.singlewords ${TEMP}/multiwords.tok ${TEMP}/${CORPUS_NAME}.tok ${TEMP}/${CORPUS_NAME}.words
 
 tinyCC_index:
 	perl ${TINY_CC_PL}/index_wl_utf8.pl ${TEMP}/${CORPUS_NAME}.words ${TEMP}/${CORPUS_NAME}.tok ${TEMP}/${CORPUS_NAME} ;\
@@ -121,10 +123,10 @@ perl ${TINY_CC_PL}/add3col_sym.pl ${TEMP}/${CORPUS_NAME}.sfreqtempsort ${SMINFRE
 perl ${TINY_CC_PL}/ssig.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${TEMP}/${CORPUS_NAME}.index ${TEMP}/${CORPUS_NAME}.sfreq ${SMINSIG} ${DIGITS} ${RES_DIR}/${CORPUS_NAME}.co_s
 
 tinyCC_detok: 
-	perl ${TINY_CC_PL}/detok_multiwords_utf8.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${RES_DIR}/${CORPUS_NAME}.words
+	perl ${SCRIPT_DIR}/detok_multiwords_utf8.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${RES_DIR}/${CORPUS_NAME}.words
 
 ###### filter resulting words using exclusion list in ${KNOWN_WORDS}
-KNOWN_WORDS=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data/known_forms
+KNOWN_WORDS=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data/merged_known_forms.txt
 
 ${CORPUS_NAME}_filtered.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS}
 	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS} > $@
@@ -132,5 +134,6 @@ ${CORPUS_NAME}_filtered.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.w
 ${CORPUS_NAME}_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
-
+logo_db: ${SCRIPT_DIR}/load_db.pl
+	perl $< --db_name=logodb --db_user=logo --db_pw=scope --db_dir=${RES_DIR} --basename=${CORPUS_NAME}
 ### Makefile ends here

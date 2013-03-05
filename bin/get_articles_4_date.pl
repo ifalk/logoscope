@@ -422,6 +422,7 @@ foreach my $link (keys %feeds) {
     $text =~ s/’/'/g;
     $text =~ s/\.+/./g;
     $text =~ s/…/./g;
+    $text =~ s/,(\p{L})/, $1/g;
 
     # $out_filename = join('-', $out_filename, $title);
     $out_filename = join('.', $out_filename, 'txt');

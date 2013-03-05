@@ -101,6 +101,8 @@ print STDERR Dumper(\%opts);
 binmode(STDOUT, ':utf8');
 binmode(STDERR, ':utf8');
 
+use List::MoreUtils qw(indexes);
+
 my %exclude;
 
 open(my $fh, '<:encoding(utf-8)', $opts{exc_list}) or 
@@ -129,8 +131,9 @@ foreach my $line (@word_list) {
   my ($id, $word, $freq) = split(/\s+/, $line);
 
   ### is word capitalised?
-  if ($word =~ m{ \A ([\p{Lu}\p{Lt}]\p{Ll}+)+ \z }xms) {
+  if ($word =~ m{ \A ([\p{Lu}\p{Lt}][\p{Ll}-]+)+ \z }xms) {
     my $downcase = lc($word);
+
     ### is downcase word known?
     if ($exclude{$downcase}) {
       $capitalised_known{$id}++;
@@ -147,13 +150,31 @@ my %word_pos;
 open($fh, '<:encoding(utf-8)', $opts{words2sentences}) or
   die "Couldn't open $opts{words2sentences} for reading: $!\n";
 
+my @sentence = ();
+my $s_id = 0;
+my $w_id = 0;
+my $pos;
+
 while (my $line = <$fh>) {
   chomp($line);
-  my ($w_id, $s_id, $pos) = split(/\s+/, $line);
+  ($w_id, $s_id, $pos) = split(/\s+/, $line);
 
-
-  next unless ($capitalised_known{$w_id});
-  $word_pos{$w_id}->{$pos}++;
+  if ($pos == 0) {
+    my @pos_known = indexes { $capitalised_known{$_} } @sentence;
+    foreach my $pos (@pos_known) {
+      if ($pos <= 1) {
+	$word_pos{$sentence[$pos]}->{$pos}++;
+      } elsif ($sentence[$pos-1] <= 100) {
+	$word_pos{$sentence[$pos]}->{1}++;
+      } else {
+	$word_pos{$sentence[$pos]}->{$pos}++;
+      }
+    }
+    @sentence = ();
+    $sentence[$pos] = $w_id;
+  } else {
+    $sentence[$pos] = $w_id;
+  }
 }
 
 close $fh;
@@ -165,6 +186,7 @@ foreach my $line (@word_list) {
   ### is word all uppercase?
   if ($word =~ m{ \A \p{IsUpper}+ \z }xms) {
     my $downcase = lc($word);
+
     ### is downcase word known?
     unless ($exclude{$downcase}) {
       print join("\t", $id, $word, $freq), "\n";
@@ -173,6 +195,7 @@ foreach my $line (@word_list) {
   }
 
   if ($capitalised_known{$id}) {
+
     ### does not occur at the beginning of the sentence
     unless ($word_pos{$id}->{1}) {
       print join("\t", $id, $word, $freq), "\n";

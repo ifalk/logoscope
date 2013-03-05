@@ -1,0 +1,8 @@
+// question: 0  name: Switch category to $course$/Défaut pour Projet - Logoscope 
+$CATEGORY: $course$/Défaut pour Projet - Logoscope
+
+
+// question: 32692  name: Etat 
+::Etat::[html]Texte de la question \: mot nouveau ?{FALSE}
+
+

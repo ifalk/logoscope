@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+
+
+<!-- question: 0  -->
+  <question type="category">
+    <category>
+        <text>$course$/Défaut pour Projet - Logoscope</text>
+
+    </category>
+  </question>
+
+
+
+  <question type="truefalse">
+    <name><text>Etat</text>
+</name>
+    <questiontext format="html">
+<text>
+<![CDATA[
+<p>
+Le mot <font color=red>Etat</font> n'est pas un mot connu.
+</p>
+<p>
+Est-ce un mot nouveau ?
+</p>
+<h5>Frequence: 233</h5>
+<h5>Exemples :</h5>
+<p>
+23	Syrie: Kerry rencontre Lavrov à Berlin pour trouver une issue au conflit Le secrétaire d'<font color=red>Etat</font> américain John Kerry rencontre mardi à Berlin son homologue russe Sergueï Lavrov pour tenter de trouver une issue en Syrie, à deux jours d'une réunion internationale à Rome à laquelle le chef de la diplomatie américaine a convaincu l'opposition syrienne de participer.
+</p>
+<p>
+27	Les deux hommes se connaissent du temps où le nouveau secrétaire d'<font color=red>Etat</font> était président de l'influente commission des Affaires étrangères du Sénat.
+</p>
+<p>
+30	Un responsable du département d'<font color=red>Etat</font> a ainsi expliqué aux journalistes accompagnant M. Kerry que «la Russie peut jouer un rôle crucial pour convaincre le régime (syrien) (.) de la nécessité d'une transition politique».
+</p>
+<p>
+36	Au terme de 36 heures de déclarations et de tractations en coulisses, le secrétaire d'<font color=red>Etat</font> a réussi lundi soir à persuader au téléphone le chef de la Coalition, Ahmed Moaz al-Khatib, de faire le voyage à Rome.
+</p>
+<p>
+37	M. Khatib a assuré qu'il irait finalement en Italie --et un responsable du département d'<font color=red>Etat</font> l'a confirmé-- parce que M. Kerry et son homologue britannique William Hague avaient «promis des aides spécifiques pour soulager la souffrance de notre peuple».
+</p>
+<p>
+40	En prenant ses fonctions début février, le secrétaire d'<font color=red>Etat</font> avait évoqué une prochaine initiative «diplomatique» sur la Syrie.
+<p>
+]]>
+</text>
+    </questiontext>
+    <image></image>
+    <generalfeedback>
+<text>
+</text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>0</shuffleanswers>
+    <answer fraction="0">
+      <text>true</text>
+
+      <feedback>
+        <text>
+
+        </text>
+      </feedback>
+    </answer>
+    <answer fraction="100">
+      <text>false</text>
+
+      <feedback>
+        <text>
+
+        </text>
+      </feedback>
+    </answer>
+</question>
+
+<question type="truefalse">
+  <name>
+    <text>Premier</text>
+  </name>
+    <questiontext format="html">
+      <text>
+	<![CDATA[
+<p>
+Le mot <font color=red>Premier</font> n'est pas un mot connu.
+</p>
+<p>
+Est-ce un mot nouveau ?
+</p>
+		 <h4>Exemples :</h4>
+		 <p>
+822	Au Japon, le <font color=red>Premier</font> ministre Shinzo Abe a qualifié l'essai nucléaire d' «extrêmement regrettable».</p>
+<p>
+826	«En coopération avec la communauté internationale, nous prendrons toutes les mesures possibles pour gérer ce problème, y compris une révision des sanctions» spécifiques du Japon à l'égard de la Corée du Nord, a ajouté le <font color=red>Premier</font> ministre.</p>
+<p>
+909	Le <font color=red>Premier</font> ministre Jean-Marc Ayrault et le ministre de l'Intérieur Manuel Valls doivent assister à 11h30 aux obsèques des deux membres de la brigade anti-criminalité (BAC) de Paris tués jeudi matin à l'issue d'une course-poursuite.</p>
+<p>
+979	LIRE AUSSI: » Le Parlement s'empare de la réforme bancaire » <font color=red>Premier</font> bras de fer sur la réforme bancaire</p>
+<p>
+1384	Mais dès son arrivée à Bruxelles jeudi en milieu de journée, le <font color=red>Premier</font> ministre britannique David Cameron s'était montré inflexible.</p>
+	]]>
+      </text>
+    </questiontext>
+    <image></image>
+    <generalfeedback>
+      <text>
+      </text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>1</penalty>
+    <hidden>0</hidden>
+    <shuffleanswers>0</shuffleanswers>
+    <answer fraction="0">
+      <text>true</text>
+      
+      <feedback>
+        <text>
+
+        </text>
+      </feedback>
+    </answer>
+    <answer fraction="100">
+      <text>false</text>
+      
+      <feedback>
+        <text>
+	  
+        </text>
+      </feedback>
+    </answer>
+</question>
+
+
+</quiz>

@@ -110,10 +110,48 @@ while (my $line = <$fh>) {
   next if ($id <= 100);
 
   my $freq = pop(@rest);
-  my $word = join('_', @rest);
+  my $word = join(' ', @rest);
 
   next unless($freq);
+
+  ### does not contain any letter
+  next unless ($word =~ m{ \p{L} }xms);
+
+  ### contains '--'
+  next if ($word =~ m{ -- }xmsg);
+
+  ### contains https?://
+  next if ($word =~ m{https?://});
+
+  ### contains .(fr|com) at end
+  # next if ($word =~ m{ \. fr \z}xms;
+  # next if ($word =~ m{ \. com \z}xms;
+
+  ### contains '=' and '&'
+  next if ($word =~ m{=} and $word =~ m{&});
+
+  ### matches a number 2e, 17e, etc.
+  next if ($word =~ m{ \A \d+ e r?\z}xms);
+
+  ### matches a time 14H00, 23h00
+  next if ($word =~ m{ \A [0-2]? [0-9] [Hh] [0-6]? [0-9]? \z }xms);
+
+  ### replace œ by oe
+  $word =~ s{œ}{oe}xmsg;
+
+  ### remove '-' at beginning and end of word
+  ### remove non-letter characters at beginning and end of word
+  # $word =~ s{\A [-–] }{}xms;
+  $word =~ s{ \A [^\p{L}] }{}xms;
+  # $word =~ s{[-–] \z}{}xms;
+  $word =~ s{[^\p{L}] \z}{}xms;
+
+  ### remove '-' followed by pronoun at end of word (or là)
+  $word =~ s{ - (t-)? (je|tu|il|elle|nous|vous|ils|elles|lui|la|les|on|là) \z }{}xms;
+
+  ### has less than 2 letters
   next if (length($word) < 2);
+
   next if $exclude{$word};
   print join("\t", $id, $word, $freq), "\n";
 }
