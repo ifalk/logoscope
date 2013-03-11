@@ -419,10 +419,10 @@ foreach my $link (keys %feeds) {
     $title =~ s{ \s+ }{_}xmsg;
 
     $text =~ s{ \x{A0} }{ }xmsg; 
-    $text =~ s/’/'/g;
+    $text =~ s/[’\222]/'/g;
     $text =~ s/\.+/./g;
     $text =~ s/…/./g;
-    $text =~ s/,(\p{L})/, $1/g;
+    $text =~ s/,([^\s])/, $1/g;
 
     # $out_filename = join('-', $out_filename, $title);
     $out_filename = join('.', $out_filename, 'txt');

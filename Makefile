@@ -46,20 +46,20 @@ get_2013-02-12_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-02-12.p
 ####
 
 LOGO_HOME=/home/falk/Logoscope
+
 TINY_CC_HOME=${LOGO_HOME}/LCC/tinyCC2.1.1
 TINY_CC_BIN=${TINY_CC_HOME}/bin
 TINY_CC_PL=${TINY_CC_HOME}/perl
 TINY_CC_ABBREV=${TINY_CC_HOME}/bin/abbrev
-
-
 TINY_CC_SOURCES=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/sources
 
 #CORPUS_NAME=${TODAY}
-CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-02-26)
-
+CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-09)
 
 TEMP=temp
 RES_DIR=${CORPUS_NAME}_tinyCC2_results
+
+#### shell vars for tinyCC scripts
 
 # input text is in format (latin|utf8)
 export TEXTFORM=utf8
@@ -87,6 +87,9 @@ export NMINSIG=3.84
 export DIGITS=2
 
 RECODE_CMD=`which recode`
+
+#### data dir
+DATA_DIR=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data
 
 tinyCC_collect_convert:
 	mkdir $(TEMP) ; \
@@ -125,15 +128,50 @@ perl ${TINY_CC_PL}/ssig.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${TEMP}/${CORPUS_
 tinyCC_detok: 
 	perl ${SCRIPT_DIR}/detok_multiwords_utf8.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${RES_DIR}/${CORPUS_NAME}.words
 
+
+#### merge known words from various sources into one list
+
+MWES=${DATA_DIR}/multiwords
+PROLEX=${LOGO_HOME}/casen1.0/dela/Prolex-Unitex.dic
+LOGO_KNOWN=${DATA_DIR}/known_forms
+
+merged_known_forms.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES}
+	perl $< --prolex=${PROLEX} --mwes=${MWES} ${LOGO_KNOWN} > $@
+
 ###### filter resulting words using exclusion list in ${KNOWN_WORDS}
-KNOWN_WORDS=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data/merged_known_forms.txt
+KNOWN_WORDS=merged_known_forms.txt
 
 ${CORPUS_NAME}_filtered.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS}
 	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS} > $@
 
+#### filter capitalised unknown words as follows: remove word if in
+#### most cases it is the first in the sentence and the downcase
+#### version is known.
 ${CORPUS_NAME}_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
+
+#### filter capitalised unknown words as follows: 
+#### remove if downcase version is known
+${CORPUS_NAME}_known_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
+	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+#### remove all capitalised words
+${CORPUS_NAME}_all_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
+	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+#### keep only capitalised words where the downcase version is not known
+${CORPUS_NAME}_keep_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_keep_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
+	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} > $@
+
+#### load database
+
 logo_db: ${SCRIPT_DIR}/load_db.pl
 	perl $< --db_name=logodb --db_user=logo --db_pw=scope --db_dir=${RES_DIR} --basename=${CORPUS_NAME}
+
+load_db_new_words: ${SCRIPT_DIR}/load_db_unknown_words.pl
+	perl $< --db_name=logodb --db_user=logo --db_pw=scope --file=${CORPUS_NAME}_capitalised_filtered.txt
+
+
 ### Makefile ends here
+

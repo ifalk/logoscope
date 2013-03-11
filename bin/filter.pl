@@ -106,6 +106,7 @@ open($fh, '<:encoding(utf-8)', $opts{word_list}) or
 
 while (my $line = <$fh>) {
   chomp($line);
+  $line =~ s{ \222 }{'}xmsg;
   my ($id, @rest) = split(/\s+/, $line);
   next if ($id <= 100);
 

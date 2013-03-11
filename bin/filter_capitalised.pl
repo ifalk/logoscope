@@ -65,6 +65,8 @@ File containing a list of known words, one word per line.
 
 =item words2sentences
 
+This option must be provided if the I<discard> option is not set.
+
 File containing index of words into sentences. It gives the position of the word in the sentence. The expected format is as follows:
 
  w id sent id  position in sent.
@@ -75,25 +77,38 @@ File containing index of words into sentences. It gives the position of the word
  110	1	3
  1411	1	4
 
+=item discard
+
+Gives the strength of the filter. Default is 0, where the least words are discarded.
+
+When the option occurs once (I<--discard>), those capitalised words are discarded the downcase version of which are in the exclusion list.
+
+When the option is given twice (I<--discard --discard), all capitalised words are discarded.
+
 
 =back
 
 =cut
 
-
 my %opts = (
 	    'word_list' => '',
 	    'exc_list' => '',
 	    'words2sentences' => '',
+	    'discard' => 0,
 	   );
 
 my @optkeys = (
 	       'word_list=s',
 	       'exc_list=s',
-	       'words2sentences=s'
+	       'words2sentences:s',
+	       'discard+',
 	      );
 
 unless (GetOptions (\%opts, @optkeys)) { pod2usage(2); };
+
+unless ($opts{discard}) {
+  unless ($opts{words2sentences}) { pod2usage(2); };
+}
 
 print STDERR "Options:\n";
 print STDERR Dumper(\%opts);
@@ -124,102 +139,138 @@ open($fh, '<:encoding(utf-8)', $opts{word_list}) or
 
 my @word_list = <$fh>;
 
-my %capitalised_known;
-
-foreach my $line (@word_list) {
-  chomp($line);
-  my ($id, $word, $freq) = split(/\s+/, $line);
-
-  ### is word capitalised?
-  if ($word =~ m{ \A ([\p{Lu}\p{Lt}][\p{Ll}-]+)+ \z }xms) {
-    my $downcase = lc($word);
-
-    ### is downcase word known?
-    if ($exclude{$downcase}) {
-      $capitalised_known{$id}++;
-    }
-  }
-
-}
-
 close $fh;
 
+use locale;
+use POSIX qw(locale_h);
+setlocale(LC_COLLATE, 'fr_FR.utf8');
 
-my %word_pos;
+if ($opts{discard} == 1) {
 
-open($fh, '<:encoding(utf-8)', $opts{words2sentences}) or
-  die "Couldn't open $opts{words2sentences} for reading: $!\n";
+  foreach my $line (@word_list) {
+    chomp($line);
+    my ($id, $word, $freq) = split(/\s+/, $line);
 
-my @sentence = ();
-my $s_id = 0;
-my $w_id = 0;
-my $pos;
+    ### ignore acronyms
+    next if ($word =~ m{ \A [\p{Lu}\p{Lt}]+ \z }xms);
 
-while (my $line = <$fh>) {
-  chomp($line);
-  ($w_id, $s_id, $pos) = split(/\s+/, $line);
-
-  if ($pos == 0) {
-    my @pos_known = indexes { $capitalised_known{$_} } @sentence;
-    foreach my $pos (@pos_known) {
-      if ($pos <= 1) {
-	$word_pos{$sentence[$pos]}->{$pos}++;
-      } elsif ($sentence[$pos-1] <= 100) {
-	$word_pos{$sentence[$pos]}->{1}++;
-      } else {
-	$word_pos{$sentence[$pos]}->{$pos}++;
-      }
-    }
-    @sentence = ();
-    $sentence[$pos] = $w_id;
-  } else {
-    $sentence[$pos] = $w_id;
-  }
-}
-
-close $fh;
-
-foreach my $line (@word_list) {
-  chomp($line);
-  my ($id, $word, $freq) = split(/\s+/, $line);
-
-  ### is word all uppercase?
-  if ($word =~ m{ \A \p{IsUpper}+ \z }xms) {
     my $downcase = lc($word);
-
+    
     ### is downcase word known?
-    unless ($exclude{$downcase}) {
-      print join("\t", $id, $word, $freq), "\n";
-    }
-    next;
-  }
-
-  if ($capitalised_known{$id}) {
-
-    ### does not occur at the beginning of the sentence
-    unless ($word_pos{$id}->{1}) {
-      print join("\t", $id, $word, $freq), "\n";
-      next;
-    }
-
-    ### This means the capitalised word occurs at the beginning of the
-    ### sentence in most cases
-    if ($word_pos{$id}->{1} > $freq/2) {
-      # print STDERR "Excluded: ", join("\t", $id, $word, $freq), "\n";
-      # print STDERR Dumper($word_pos{$id});
-      next;
-    }
+    next if ($exclude{$downcase});
 
     print join("\t", $id, $word, $freq), "\n";
-    # print STDERR Dumper($word_pos{$id});
-    next;
+
+  }
+}
+elsif ($opts{discard} == 2) {
+
+  foreach my $line (@word_list) {
+    chomp($line);
+    my ($id, $word, $freq) = split(/\s+/, $line);
+
+    ### ignore if capitalised
+    next if ($word =~ m{ \A [\p{Lu}\p{Lt}] }xms);
+
+    print join("\t", $id, $word, $freq), "\n";
+  }
+}
+else {
+  my %capitalised_known;
+
+  foreach my $line (@word_list) {
+    chomp($line);
+    my ($id, $word, $freq) = split(/\s+/, $line);
     
+    ### is word capitalised?
+    if ($word =~ m{ \A ([\p{Lu}\p{Lt}][\p{Ll}-]+)+ \z }xms) {
+      
+      my $downcase = lc($word);
+
+      ### is downcase word known?
+      if ($exclude{$downcase}) {
+	$capitalised_known{$id}++;
+      }
+    }
   }
 
-  print join("\t", $id, $word, $freq), "\n";
+  my %word_pos;
 
+  open($fh, '<:encoding(utf-8)', $opts{words2sentences}) or
+    die "Couldn't open $opts{words2sentences} for reading: $!\n";
+  
+  my @sentence = ();
+  my $s_id = 0;
+  my $w_id = 0;
+  my $pos;
+  
+  
+  while (my $line = <$fh>) {
+    chomp($line);
+    ($w_id, $s_id, $pos) = split(/\s+/, $line);
+    
+    if ($pos == 0) {
+      my @pos_known = indexes { $capitalised_known{$_} } @sentence;
+      foreach my $pos (@pos_known) {
+	if ($pos <= 1) {
+	  $word_pos{$sentence[$pos]}->{$pos}++;
+	} elsif ($sentence[$pos-1] <= 100) {
+	  $word_pos{$sentence[$pos]}->{1}++;
+	} else {
+	  $word_pos{$sentence[$pos]}->{$pos}++;
+	}
+      }
+      @sentence = ();
+      $sentence[$pos] = $w_id;
+    } else {
+      $sentence[$pos] = $w_id;
+    }
+  }
+  
+  close $fh;
+
+  foreach my $line (@word_list) {
+    chomp($line);
+    my ($id, $word, $freq) = split(/\s+/, $line);
+    
+    ### is word all uppercase?
+    if ($word =~ m{ \A \p{IsUpper}+ \z }xms) {
+      my $downcase = lc($word);
+      
+      ### is downcase word known?
+      unless ($exclude{$downcase}) {
+	print join("\t", $id, $word, $freq), "\n";
+      }
+      next;
+    }
+    
+    if ($capitalised_known{$id}) {
+      
+      ### does not occur at the beginning of the sentence
+      unless ($word_pos{$id}->{1}) {
+	print join("\t", $id, $word, $freq), "\n";
+	next;
+      }
+      
+      ### This means the capitalised word occurs at the beginning of the
+      ### sentence in most cases
+      if ($word_pos{$id}->{1} > $freq/2) {
+	# print STDERR "Excluded: ", join("\t", $id, $word, $freq), "\n";
+	# print STDERR Dumper($word_pos{$id});
+	next;
+      }
+      
+      print join("\t", $id, $word, $freq), "\n";
+      # print STDERR Dumper($word_pos{$id});
+      next;
+      
+    }
+    
+    print join("\t", $id, $word, $freq), "\n";
+    
+  }
+  
 }
-
 
 
 1;

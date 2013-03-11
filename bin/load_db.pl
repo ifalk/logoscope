@@ -108,7 +108,7 @@ my $dbh = DBI->connect(
 $dbh->do("DROP TABLE IF EXISTS Words");
 $dbh->do("CREATE TABLE Words(W_id INTEGER PRIMARY KEY, Word VARCHAR(25), Freq INT)");
 
-my $db_dir = '/home/falk/Logoscope/SourceSup/logoscope/logoscope_2/2013-02-26_tinyCC2_results';
+my $db_dir = $opts{db_dir};
 my $basename = $opts{basename};
 
 my $words_file = join('.', $basename, 'words');
