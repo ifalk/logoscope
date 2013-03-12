@@ -7,7 +7,7 @@
 
 .IGNORE:
 
-LOGO_DIR=/home/falk/Logoscope/SourceSup/logoscope/logoscope_2
+LOGO_DIR=/home/falk/Logoscope/VC/logoscope/logoscope_2
 SCRIPT_DIR=${LOGO_DIR}/bin
 WEBSITES=${LOGO_DIR}/websites
 TEXT_DIR=${LOGO_DIR}/sources
@@ -51,7 +51,7 @@ TINY_CC_HOME=${LOGO_HOME}/LCC/tinyCC2.1.1
 TINY_CC_BIN=${TINY_CC_HOME}/bin
 TINY_CC_PL=${TINY_CC_HOME}/perl
 TINY_CC_ABBREV=${TINY_CC_HOME}/bin/abbrev
-TINY_CC_SOURCES=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/sources
+TINY_CC_SOURCES=${LOGO_HOME}/VC/logoscope/logoscope_2/sources
 
 #CORPUS_NAME=${TODAY}
 CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-09)
@@ -89,7 +89,7 @@ export DIGITS=2
 RECODE_CMD=`which recode`
 
 #### data dir
-DATA_DIR=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data
+DATA_DIR=${LOGO_HOME}/VC/logoscope/logoscope_2/data
 
 tinyCC_collect_convert:
 	mkdir $(TEMP) ; \
@@ -103,7 +103,7 @@ mv ${TEMP}/sources.txt ${RES_DIR}/${CORPUS_NAME}.sources
 tinyCC_number_sentences:
 	perl ${TINY_CC_PL}/numberIt.pl ${TEMP}/${CORPUS_NAME}.s > ${RES_DIR}/${CORPUS_NAME}.sentences
 
-KNOWN_MWES=${LOGO_HOME}/SourceSup/logoscope/logoscope_2/data/multiwords
+KNOWN_MWES=${LOGO_HOME}/VC/logoscope/logoscope_2/data/multiwords
 tinyCC_tokenize:
 	perl ${TINY_CC_PL}/tokenize_utf8.pl ${RES_DIR}/${CORPUS_NAME}.sentences ${TEMP}/${CORPUS_NAME}.tok ; \
 perl ${TINY_CC_PL}/tok_multiwords_utf8.pl ${KNOWN_MWES} ${TEMP}/multiwords.tok

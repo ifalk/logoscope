@@ -9,7 +9,7 @@
     </category>
   </question>
 
-  <question type="multichoice">
+  <question type="description">
     <name><text>Findus mc</text></name>
     <questiontext format="html">
       <text>
@@ -39,28 +39,35 @@
 	]]>
       </text>
     </questiontext>
-    <answer fraction="20">
+  </question>
+
+
+  <question type="multichoice">
+    <name><text>Findus mc</text></name>
+    <answer fraction="50">
       <text>Mot nouveau</text>
       <!-- <feedback><text>Correct!</text></feedback> -->
     </answer>
-    <answer fraction="20">
+    <answer fraction="10">
       <text>Entité nommée</text>
       <!-- <feedback><text>Ooops!</text></feedback> -->
     </answer>
-    <answer fraction="20">
-      <text>Sigle</text>
-      <!-- <feedback><text>Ooops!</text></feedback> -->
-    </answer>
-    <answer fraction="20">
+    <answer fraction="30">
       <text>Faute de frappe</text>
-      <!-- <feedback><text>Ooops!</text></feedback> -->
-    </answer>
-    <answer fraction="20">
-      <text>Autre</text>
       <!-- <feedback><text>Ooops!</text></feedback> -->
     </answer>
     <shuffleanswers>0</shuffleanswers>
     <single>false</single>
-    <answernumbering>none</answernumbering>
+    <answernumbering>abc</answernumbering>
+  </question>
+
+  <question type="shortanswer">
+    <name><text>Findus mc</text></name>
+    <questiontext format="html">
+         <text>Commentaire ou remarque ?</text>
+     </questiontext>
+     <answer fraction="100">
+       <text>*</text>
+     </answer>
   </question>
 </quiz>
