@@ -113,10 +113,13 @@ print STDERR Dumper(\%opts);
 my %ALLOWED_TYPES = ( 
 		     lc => { 
 			    mc_answers => [
-					   ['Mot nouveau', '50'],
-					   ['Faute de frappe', '30'],
-					   ['Entité nomée', '10'],
-					  ],
+			      ['Je ne connais pas ce mot', '60'],
+			      ["C'est une faute de frappe", '5'],
+			      ["Ce n'est pas un mot", '4'],
+			      ["C'est le nom d'une personne", '3'],
+			      ["C'est le nom d'un lieu", '2'],
+			      ["C'est le nom d'une marque ou d'une organisation", '1'],
+			      ],
 			   },
 		     uc => {
 			    mc_answers => [
@@ -268,7 +271,8 @@ foreach my $ref (@w_ids2words) {
 
   foreach my $sent (keys %{ $examples{$word} }) {
 
-    $sent =~ s{\b$word\b}{<font color=red>$word</font>}xmsg;
+    my $repl_string = quotemeta($word);
+    $sent =~ s{\b$repl_string\b}{<font color=red>$word</font>}xmsg;
     $cdata_content = join("\n", $cdata_content, "<p>$sent</p>");
 
   };

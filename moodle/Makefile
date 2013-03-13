@@ -12,9 +12,9 @@ SCRIPT_DIR=${LOGO_DIR}/bin
 CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-09)
 
 quest_${CORPUS_NAME}_lc.xml: ${SCRIPT_DIR}/make_moodle_quest.pl ../${CORPUS_NAME}_all_capitalised_filtered.txt
-	perl $< --db_name=logodb --db_user=logo --db_pw=scope --unknown_type=lc moodle_test.txt > $@
+	perl $< --db_name=logodb --db_user=logo --db_pw=scope --unknown_type=lc ${LOGO_DIR}/${CORPUS_NAME}_all_capitalised_filtered.txt > $@
 
-# ${CORPUS_NAME}_all_capitalised_filtered.txt
+
 
 
 
