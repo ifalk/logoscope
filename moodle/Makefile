@@ -9,10 +9,13 @@ LOGO_DIR=/home/falk/Logoscope/VC/logoscope/logoscope_2
 SCRIPT_DIR=${LOGO_DIR}/bin
 
 #CORPUS_NAME=${TODAY}
-CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-09)
+CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-18)
 
 quest_${CORPUS_NAME}_lc.xml: ${SCRIPT_DIR}/make_moodle_quest.pl ../${CORPUS_NAME}_all_capitalised_filtered.txt
 	perl $< --db_name=logodb --db_user=logo --db_pw=scope --unknown_type=lc ${LOGO_DIR}/${CORPUS_NAME}_all_capitalised_filtered.txt > $@
+
+quest_${CORPUS_NAME}.xml: ${SCRIPT_DIR}/make_moodle_quest.pl ${LOGO_DIR}/${CORPUS_NAME}_capitalised_filtered.txt
+	perl $< --db_name=logodb${CORPUS_NAME} --db_user=logo --db_pw=scope --unknown_type=lc --test_title='Mots inconnus du 18/03/2013' ${LOGO_DIR}/${CORPUS_NAME}_capitalised_filtered_casen_ws.txt > $@
 
 
 

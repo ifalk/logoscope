@@ -26,6 +26,7 @@ make_moodle_quest.pl
                             --db_user=logo 
                             --db_pw=scope
                             --lc 
+                            --test_title=title of test
        list-of-selected-words
 
 =head1 DESCRIPTION
@@ -80,25 +81,36 @@ Currently allowed values are:
 
 Number of sample sentences to be produced. Default is 3.
 
+=item test_title
+
+This is used to create the text string which appears in the 
+category element:
+
+ <<category>>
+  <<text>>$module$/Défaut pour I<test_title><</text>>
+ <</category>>
+
 =back
 
 =cut
 
 
 my %opts = (
-	    'db_name' => '',
-	    'db_user' => '',
-	    'db_pw' => '',
-	    'unknown_type' => '',
-	    'nbr_ex' => 3,
+  'db_name' => '',
+  'db_user' => '',
+  'db_pw' => '',
+  'unknown_type' => '',
+  'nbr_ex' => 3,
+  'test_title' => '',
   );
 
 my @optkeys = (
-	       'db_name=s',
-	       'db_user=s',
-	       'db_pw=s',
-	       'unknown_type=s',
-	       'nbr_ex:i',
+  'db_name=s',
+  'db_user=s',
+  'db_pw=s',
+  'unknown_type=s',
+  'nbr_ex:i',
+  'test_title=s'
   );
 
 unless (@ARGV) { pod2usage(2); };
@@ -109,16 +121,21 @@ unless (GetOptions (\%opts, @optkeys)) { pod2usage(2); };
 print STDERR "Options:\n";
 print STDERR Dumper(\%opts);
 
+use List::MoreUtils qw(first_index);
 
 my %ALLOWED_TYPES = ( 
 		     lc => { 
 			    mc_answers => [
-			      ['Je ne connais pas ce mot', '60'],
-			      ["C'est une faute de frappe", '5'],
-			      ["Ce n'est pas un mot", '4'],
-			      ["C'est le nom d'une personne", '3'],
-			      ["C'est le nom d'un lieu", '2'],
-			      ["C'est le nom d'une marque ou d'une organisation", '1'],
+			      ["Je n'ai pas d'éléments pour savoir", '10'],
+			      ["Ce n'est pas un mot", '10'],
+			      ["... c'est une faute de frappe", '10'],
+			      ["C'est un mot existant et c'est...", '10'],
+			      ["... un nom de personne", '3'],
+			      ["... un nom de lieu", '3'],
+			      ["... un nom de marque ou d'organisation", '3'],
+			      ["C'est un mot existant étranger", '20'],
+			      ["C'est très probablement un mot inédit", '30'],
+			      ["... c'est un emprunt", '1'],
 			      ],
 			   },
 		     uc => {
@@ -134,7 +151,7 @@ my %ALLOWED_TYPES = (
 my @mc_elements = (
 		   [ 'shuffleanswers', '0' ],
 		   [ 'single', 'false' ],
-		   [ 'answernumbering', 'abc' ],
+		   [ 'answernumbering', 'none' ],
 		  );
 
 unless ($ALLOWED_TYPES{$opts{unknown_type}}) { pod2usage(2) };
@@ -189,6 +206,21 @@ while (my $line = <$fh>) {
 
 close $fh;
 
+my $sth = $dbh->prepare("SELECT MAX(S_id ) FROM Sentences")
+ || die "$DBI::errstr";
+$sth->execute();
+
+my $max_sid = 9999;
+if ($sth->rows < 0) {
+  print STDERR "Couldn't get maximum sentence id\n";
+} else {
+  while (my @result = $sth->fetchrow_array()) {
+    $max_sid = $result[0];
+  }
+}
+$sth->finish;
+
+
 my %examples;
 
 foreach my $ref (@w_ids2words) {
@@ -212,9 +244,70 @@ foreach my $ref (@w_ids2words) {
       print STDERR "No sentence for $s_id ($word, $w_id).\n";
     } else {
       while (my @result = $sth->fetchrow_array()) {
-	$examples{$word}->{$result[0]}->{$s_id}++;
-	# print STDERR "Sentence id: $s_id\n";
-	# print STDERR $result[0], "\n";
+
+	my @words = split(/\s/, $result[0]);
+	my $nbr_words = scalar(@words);
+
+	if ($nbr_words <= 10) {
+
+	  # print STDERR "$s_id: $result[0]\n";
+
+	  # get more neighbouring sentences (of the same source)
+	  my $sid_start = 1;
+	  my $sid_end = $max_sid;
+	  if ($s_id - 2 > 0) {
+	    if ($s_id + 2 <= $max_sid) {
+	      $sid_start = $s_id-2;
+	      $sid_end = $s_id+2;
+	    } else {
+	      $sid_end = $max_sid;
+	      $sid_start = $max_sid-4;
+	    }
+	  } else {
+	    $sid_start = 1;
+	    $sid_end = 5;
+	  }
+
+	  my $sth2 = $dbh->prepare(
+"SELECT S_id, Source_id, sentence FROM `Sentences` INNER JOIN Inv_so
+ON Sentences.S_id = Inv_so.Sent_id WHERE Sent_id between $sid_start and $sid_end"
+)
+      || die "$DBI::errstr";
+	  $sth2->execute();
+	  if ($sth2->rows < 0) {
+	    print STDERR "No neighbouring sentences for $s_id ($word, $w_id).\n";
+	  } else {
+	    my @table;
+	    while (my @result = $sth2->fetchrow_array()) {
+	      push @table, \@result;
+	    }
+
+	    my $sid_index = first_index { $_->[0] == $s_id } @table;
+	    my $source_id = $table[$sid_index]->[1];
+
+	    my $max_index;
+	    if ($table[$sid_index+1] and $table[$sid_index+1]->[1] == $source_id) {
+	      $max_index = $sid_index+1;
+	    } else {
+	      $max_index = $sid_index;
+	    }
+
+	    my $min_index = $sid_index;
+	    if ($table[$max_index-2] and $table[$max_index-2]->[1] == $source_id) {
+	      $min_index = $max_index-2;
+	    } elsif ($table[$max_index-1] and $table[$max_index-1]->[1] == $source_id) {
+	      $min_index = $max_index-1;
+	    }
+
+	    my $ex_text = join(' ', map { $table[$_]->[2] } ($min_index .. $max_index));
+	    
+	    $examples{$word}->{$ex_text}->{$s_id}++;
+			       
+	  }
+	  $sth2->finish();
+	} else {
+	  $examples{$word}->{$result[0]}->{$s_id}++;
+	}
       }
 
       $sent_nbr = scalar(keys %{ $examples{$word} });
@@ -240,7 +333,12 @@ $quest->addChild($doc->createAttribute( type => 'category' ));
 
 my $cat = $doc->createElement('category');
 my $cat_text = $doc->createElement('text');
-$cat_text->addChild($doc->createTextNode('$course$/Défaut pour Projet - Logoscope/Automatique'));
+
+my $text_content = $opts{test_title};
+$text_content =~ s{/}{//}g;
+$text_content = "\$module\$/Défaut pour $text_content";
+
+$cat_text->addChild($doc->createTextNode($text_content));
 
 $cat->addChild($cat_text);
 $quest->addChild($cat);

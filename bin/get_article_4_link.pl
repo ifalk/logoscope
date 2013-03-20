@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # -*- mode: perl; buffer-file-coding-system: utf-8 -*-
-# get_articles_4_date.pl                   falk@jamballa.loria.fr
-#                    10 Feb 2013
+# get_article_4_link.pl                   falk@jamballa.loria.fr
+#                    18/03/2013
 
 use warnings;
 use strict;
@@ -22,49 +22,25 @@ get_articles_4_date.pl
 
 =head1 USAGE
 
- perl get_articles_4_date.pl feeds_2013-02-09.pl --source_dir=${TEXT_DIR}
+ perl get_article_4_link.pl http://www.lequipe.fr/Golf/Actualites/Premiere-pour-streelman/357705#xtor=RSS-1
 
 =head1 DESCRIPTION
 
-Gets the text content for the links provided in the file given as argument.
-The text content is written to a directory given by the option I<source_dir>.
+Gets the text content for the link provided as argument
+
 
 
 =head1 REQUIRED ARGUMENTS
 
-A file name of the form I<character string>_YYYY-MM-DD.pl containing links to sites where the content should be retrieved.
-
-The expected format is as follows:
-
- $VAR1 = {
-          'http://www.lefigaro.fr/football-ligue-1-et-2/2013/02/09/02013-20130209ARTSPO00393-ajaccio-bordeaux-en-direct.php' => 1,
-          'http://www.lefigaro.fr/mon-figaro/2013/02/09/10001-20130209ARTFIG00427-les-points-cles-de-l-avenir-de-psa.php' => 1,
-          'http://www.lequipe.fr/Football/Actualites/La-juve-garde-le-rythme/349163#xtor=RSS-1' => 1,
-        ....
-
-If no file name is provided, the script will expect the links in a
-file name I<feeds>_$(shell date +"%Y-%m-%d").pl, ie. with the date of
-today.
-
 =head1 OPTIONS
-
-=over 2
-
-=item source_dir
-
-Directory where the retrieved content is written to.
-
-=back
 
 =cut
 
 
 my %opts = (
-	    'source_dir' => '',
 	   );
 
 my @optkeys = (
-	       'source_dir=s',
 	      );
 
 unless (GetOptions (\%opts, @optkeys)) { pod2usage(2); };
@@ -72,28 +48,10 @@ unless (GetOptions (\%opts, @optkeys)) { pod2usage(2); };
 print STDERR "Options:\n";
 print STDERR Dumper(\%opts);
 
-use DateTime;
-use File::Path qw(make_path);
 
-my $file_name;
-my $date;
-if (@ARGV and $ARGV[0]) {
-  $file_name = $ARGV[0];
-  ($date,) = ($file_name =~ m{ (\d\d\d\d-\d\d-\d\d) }xms);
-} 
-else {
-  my $today = DateTime->today();
+unless (@ARGV) { pod2usage(2) };
 
-  $file_name = join('_', 'feeds', $today->truncate( to => 'day')); 
-  $file_name =~ s{T.*\z}{}xmsg;
-  $file_name = $file_name . '.pl';
-
-}
-
-my %feeds = %{ do $file_name };
-
-### check if source directory exists, if not create it.
-make_path($opts{source_dir});
+my $link = $ARGV[0];
 
 use lib "/home/falk/perl5/lib/perl5";
 use Mojo::UserAgent;
@@ -218,8 +176,9 @@ sub get_lefigaro_content {
       ### check if entry contains several <br/> indicating
       ### a result table
       my $nbr_br = $h->children('br')->size();
-      # print STDERR "Number of br elements: $nbr_br\n";
+      print STDERR "Number of br elements: $nbr_br\n";
       next if ($nbr_br > 1);
+
 
       $text = join('', $text, $h->all_text(0), "\n");
     }
@@ -232,11 +191,10 @@ sub get_lefigaro_content {
 
   if ($article_entries->size() > 0) {
     for my $h ($article_entries->each()) {
-
       ### check if entry contains several <br/> indicating
       ### a result table
       my $nbr_br = $h->children('br')->size();
-      # print STDERR "Number of br elements: $nbr_br\n";
+      print STDERR "Number of br elements: $nbr_br\n";
       next if ($nbr_br > 1);
 
       $text = join('', $text, $h->text_before(1), "\n");
@@ -359,7 +317,8 @@ sub get_lequipe_content {
     ### check if entry contains several <br/> indicating
     ### a result table
     my $nbr_br = $e->find('br')->size();
-    next if ($nbr_br > 2);
+    # print STDERR "Number of br elements: $nbr_br\n";
+    next if ($nbr_br > 5);
 
     my $new_text = $e->all_text(1);
     ### check if text is in fact some javascript
@@ -373,96 +332,68 @@ sub get_lequipe_content {
   return ($title, $text);
 }
 
-my $count = 1;
 
-foreach my $link (keys %feeds) {
+print "Link: $link\n";
 
-
-  my $out_filename = join('#', $date, $count);
-
+my $title = '';
+my $text = '';
 
 
-  print "Link: $link\n";
-
-  my $title = '';
-  my $text = '';
-
-
-  #### le monde
-  if ($link =~ m{ lemonde }xmsg) {
-
-    ($title, $text) = get_lemonde_content($link);
-    $out_filename = join('-', $out_filename, 'lemonde');
-
-  }
-  ##### liberation
-  elsif ($link =~ m{ liberation }xmsg) {
-
-    ($title, $text) = get_liberation_content($link);
-    $out_filename = join('-', $out_filename, 'liberation');
-    
-  }
-  ##### le figaro
-  elsif ($link =~ m{ lefigaro }xmsg) {
-
-    ($title, $text) = get_lefigaro_content($link);
-
-    unless ($text) {
-      print STDERR "buyable\n";
-    }
-
-    $out_filename = join('-', $out_filename, 'lefigaro');
-  }
-  ##### les echos
-  elsif ($link =~ m{ lesechos }xmsg) {
-
-    ($title, $text) = get_lesecho_content($link);
-
-    $out_filename = join('-', $out_filename, 'lesechos');
-  }
-  ##### la croix
-  elsif ($link =~ m{ la-croix }xmsg) {
-    ($title, $text) = get_lacroix_content($link);
-
-    $out_filename = join('-', $out_filename, 'lacroix');
-  }
-  ##### l'equipe
-  elsif ($link =~ m{ lequipe }xmsg) {
-    ($title, $text) = get_lequipe_content($link);
-
-    $out_filename = join('-', $out_filename, 'lequipe');
-  }
-
-
-  if ($text) {
-
-    $title =~ s{ \| .* \z }{}xmsg;
-    $title =~ s{[/|]}{ }xmsg;
-    $title =~ s{[,]}{}xmsg;
-    $title =~ tr/ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýÿ/AAAAAACEEEEIIIINOOOOOUUUUYaaaaaaceeeeiiiinooooouuuuyy/;
-    $title =~ s{ \s+ }{_}xmsg;
-
-    $text =~ s{ \x{A0} }{ }xmsg; 
-    $text =~ s/[’\222]/'/g;
-    $text =~ s/\.+/./g;
-    $text =~ s/…/./g;
-    $text =~ s/,([^\s])/, $1/g;
-
-    # $out_filename = join('-', $out_filename, $title);
-    $out_filename = join('.', $out_filename, 'txt');
-
-    $out_filename = join('/', $opts{source_dir}, $out_filename);
-
-    print "Output: $out_filename\n";
-
-    if (open my $fh, '>:encoding(utf-8)', $out_filename) {
-      print $fh $text, "\n";
-      $count++;
-    } else {
-      warn "Couldn't open $out_filename for writing: $!\n";
-    }
-  }
+#### le monde
+if ($link =~ m{ lemonde }xmsg) {
   
+  ($title, $text) = get_lemonde_content($link);
+  
+}
+##### liberation
+elsif ($link =~ m{ liberation }xmsg) {
+  
+  ($title, $text) = get_liberation_content($link);
+  
+}
+##### le figaro
+elsif ($link =~ m{ lefigaro }xmsg) {
+
+  ($title, $text) = get_lefigaro_content($link);
+  
+  unless ($text) {
+    print STDERR "buyable\n";
+  }
+
+}
+##### les echos
+elsif ($link =~ m{ lesechos }xmsg) {
+  
+  ($title, $text) = get_lesecho_content($link);
+  
+}
+##### la croix
+elsif ($link =~ m{ la-croix }xmsg) {
+  ($title, $text) = get_lacroix_content($link);
+  
+}
+##### l'equipe
+elsif ($link =~ m{ lequipe }xmsg) {
+  ($title, $text) = get_lequipe_content($link);
+  
+}
+
+
+if ($text) {
+
+  $title =~ s{ \| .* \z }{}xmsg;
+  $title =~ s{[/|]}{ }xmsg;
+  $title =~ s{[,]}{}xmsg;
+  $title =~ tr/ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýÿ/AAAAAACEEEEIIIINOOOOOUUUUYaaaaaaceeeeiiiinooooouuuuyy/;
+  $title =~ s{ \s+ }{_}xmsg;
+  
+  $text =~ s{ \x{A0} }{ }xmsg; 
+  $text =~ s/[’\222]/'/g;
+  $text =~ s/\.+/./g;
+  $text =~ s/…/./g;
+  $text =~ s/,([^\s])/, $1/g;
+  
+  print $text, "\n";
 }
 
 1;

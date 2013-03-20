@@ -104,9 +104,11 @@ close $fh;
 open($fh, '<:encoding(utf-8)', $opts{word_list}) or
   die "Couldn't open $opts{word_list} for reading: $!\n";
 
+my $count = 0;
 while (my $line = <$fh>) {
   chomp($line);
-  $line =~ s{ \222 }{'}xmsg;
+  $line =~ s{ \222 }{'}g;
+  $line =~ s{ ' }{'}g;
   my ($id, @rest) = split(/\s+/, $line);
   next if ($id <= 100);
 
@@ -132,7 +134,7 @@ while (my $line = <$fh>) {
   next if ($word =~ m{=} and $word =~ m{&});
 
   ### matches a number 2e, 17e, etc.
-  next if ($word =~ m{ \A \d+ e r?\z}xms);
+  # next if ($word =~ m{ \A \d+ e r?\z}xms);
 
   ### matches a time 14H00, 23h00
   next if ($word =~ m{ \A [0-2]? [0-9] [Hh] [0-6]? [0-9]? \z }xms);
@@ -142,20 +144,23 @@ while (my $line = <$fh>) {
 
   ### remove '-' at beginning and end of word
   ### remove non-letter characters at beginning and end of word
-  # $word =~ s{\A [-–] }{}xms;
-  $word =~ s{ \A [^\p{L}] }{}xms;
-  # $word =~ s{[-–] \z}{}xms;
-  $word =~ s{[^\p{L}] \z}{}xms;
+  $word =~ s{\A [-–­]+ }{}xms;
+  # $word =~ s{ \A [^\p{L}] }{}xms;
+  $word =~ s{[-–­]+ \z}{}xms;
+  # $word =~ s{[^\p{L}] \z}{}xms;
 
   ### remove '-' followed by pronoun at end of word (or là)
-  $word =~ s{ - (t-)? (je|tu|il|elle|nous|vous|ils|elles|lui|la|les|on|là) \z }{}xms;
+  $word =~ s{ - (t-)? (je|tu|il|elle|nous|vous|ils|elles|lui|le|la|les|on|là) \z }{}xms;
 
   ### has less than 2 letters
   next if (length($word) < 2);
 
   next if $exclude{$word};
   print join("\t", $id, $word, $freq), "\n";
+  $count++;
 }
+
+print STDERR "Number of unknown words: $count\n";
 
 1;
 

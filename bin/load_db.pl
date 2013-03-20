@@ -24,18 +24,23 @@ load_db.pl
 
 =head1 USAGE
 
-  perl load_db.pl --db_name database name to connect to
-                  --db_user database user
-                  --db_user password of that user
+  perl load_db.pl --db_user database user
+                  --db_pw password of that user
                   --db_dir  directory with data files to load into the db tables
+                  --basename database name component
 
 =head1 DESCRIPTION
 
-Connects to the database with the parameters given as options. Creates
-tables in this database and loads the data given in I<db_dir> options
-into these tables.
+=over 2
 
-NOTE: The database must be created previously (with an utf-8 I<collation_name>).
+=item Creates a database called C<logodb>I<basename>
+
+=item Connects to the database with user and password given as options. 
+
+=item Creates
+tables in this database and loads the data given in I<db_dir> options into these tables.
+
+=back
 
 =head1 REQUIRED ARGUMENTS
 
@@ -44,10 +49,6 @@ NOTE: The database must be created previously (with an utf-8 I<collation_name>).
 =head1 OPTIONS
 
 =over 2
-
-=item db_name
-
-The name of the data base to connect to.
 
 =item db_user
 
@@ -71,7 +72,6 @@ The basename of the (text) files to be loaded into the database. For example the
 =cut
 
 my %opts = (
-	    'db_name' => '',
 	    'db_user' => '',
 	    'db_pw' => '',
 	    'db_dir' => '',
@@ -79,7 +79,6 @@ my %opts = (
   );
 
 my @optkeys = (
-	       'db_name=s',
 	       'db_user=s',
 	       'db_pw=s',
 	       'db_dir=s',
@@ -91,15 +90,27 @@ unless (GetOptions (\%opts, @optkeys)) { pod2usage(2); };
 print STDERR "Options:\n";
 print STDERR Dumper(\%opts);
 
-my $db_name = $opts{db_name};
 my $db_user = $opts{db_user};
 my $db_pw = $opts{db_pw};
 
 my $basename = $opts{basename};
 
 
-my $dbh = DBI->connect(
-  "DBI:mysql:dbname=$db_name;mysql_local_infile=1", 
+my $dbh = DBI->connect(          
+  "dbi:mysql:dbname=information_schema", 
+  $db_user,
+  $db_pw,
+  { RaiseError => 1 },         
+  ) or die $DBI::errstr;
+
+my $dbname = join('', 'logodb', $opts{basename});
+
+$dbh->do("DROP DATABASE `$dbname`");
+$dbh->do("CREATE DATABASE `$dbname` CHARACTER SET utf8 COLLATE utf8_bin");
+$dbh->disconnect();
+
+$dbh = DBI->connect(
+  "DBI:mysql:dbname=$dbname;mysql_local_infile=1", 
   $db_user,
   $db_pw,
   { RaiseError => 1 },

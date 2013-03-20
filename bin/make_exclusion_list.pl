@@ -28,7 +28,7 @@ make_exclusion_list.pl
 
  perl make_exclusion_list.pl --prolex=prolex known named entities
                              --mwes=multiwords
-      known word list    
+      lists of known words (one word per line)
 
 =head1 DESCRIPTION
 
@@ -38,7 +38,7 @@ Format of resulting exclusion list is one word per line.
 
 =head1 REQUIRED ARGUMENTS
 
-Predefined known word list (one word per line).
+Files with lists of known words (one word per line).
 
 =head1 OPTIONS
 
@@ -97,28 +97,31 @@ print STDERR Dumper(\%opts);
 
 my %logo_known;
 
-open (my $fh, '<:encoding(utf-8)', $ARGV[0]) or die "Couldn't open $ARGV[0] for reading: $!\n";
-while (my $line = <$fh>) {
-  chomp($line);
-  $line =~ s{ \A \s+ }{}xmsg;
-  $line =~ s{ \s+? \z }{}xmsg;
-  $logo_known{$line}++;
-}
+my $fh;
 
-close $fh;
+foreach my $file_name (@ARGV) {
+
+  if (open (my $fh, '<:encoding(utf-8)', $file_name)) {
+    while (my $line = <$fh>) {
+      chomp($line);
+      $line =~ s{ \A \s+ }{}xmsg;
+      $line =~ s{ \s+? \z }{}xmsg;
+      $logo_known{$line}++;
+    }     
+    close $fh;
+  } else {
+    warn "Couldn't open $file_name for reading: $!\n";
+  }
+}
 
 my %prolex;
 
-my $prolex_in_logo_known = 0;
-my $in_prolex = 0;
 open($fh, '<:encoding(utf-16)', $opts{prolex}) or die "Couldn't open $opts{prolex} for reading: $!\n";
 while (my $line = <$fh>) {
   my($word, @rest) = split(/,/, $line);
-  $in_prolex++;
   next if ($word =~ m{\s}xmsg);
   unless ($logo_known{$word}) {
     $logo_known{$word}++;
-    $prolex_in_logo_known++;
   }
 }
 close $fh;
@@ -130,17 +133,14 @@ if ($opts{mwes}) {
     while (my $line = <$fh>) {
       chomp($line);
       my $mwe = $line;
-      $mwe =~ s{ \s+ }{_}xmsg;
-      $mwe = lc($mwe);
       $logo_known{$mwe}++;
     }
+    close $fh;
   } else {
     warn "Couldn't open $opts{mwes} for reading: $!\n";
   }
 }
 
-print STDERR "Number of words in Prolex: $in_prolex\n";
-print STDERR "Number of Prolex words in logo known words list: $prolex_in_logo_known\n";
 print STDERR "Number of words in merged exclusion list: ", scalar(keys %logo_known), "\n";
 
 use locale;

@@ -145,11 +145,16 @@ use locale;
 use POSIX qw(locale_h);
 setlocale(LC_COLLATE, 'fr_FR.utf8');
 
+my $count = 0;
+
 if ($opts{discard} == 1) {
 
   foreach my $line (@word_list) {
     chomp($line);
-    my ($id, $word, $freq) = split(/\s+/, $line);
+
+    my ($id, @rest) = split(/\s+/, $line);
+    my $freq = pop(@rest);
+    my $word = join(' ', @rest);
 
     ### ignore acronyms
     next if ($word =~ m{ \A [\p{Lu}\p{Lt}]+ \z }xms);
@@ -160,19 +165,23 @@ if ($opts{discard} == 1) {
     next if ($exclude{$downcase});
 
     print join("\t", $id, $word, $freq), "\n";
-
+    $count++;
   }
 }
 elsif ($opts{discard} == 2) {
 
   foreach my $line (@word_list) {
     chomp($line);
-    my ($id, $word, $freq) = split(/\s+/, $line);
+
+    my ($id, @rest) = split(/\s+/, $line);
+    my $freq = pop(@rest);
+    my $word = join(' ', @rest);
 
     ### ignore if capitalised
     next if ($word =~ m{ \A [\p{Lu}\p{Lt}] }xms);
 
     print join("\t", $id, $word, $freq), "\n";
+    $count++;
   }
 }
 else {
@@ -180,7 +189,10 @@ else {
 
   foreach my $line (@word_list) {
     chomp($line);
-    my ($id, $word, $freq) = split(/\s+/, $line);
+
+    my ($id, @rest) = split(/\s+/, $line);
+    my $freq = pop(@rest);
+    my $word = join(' ', @rest);
     
     ### is word capitalised?
     if ($word =~ m{ \A ([\p{Lu}\p{Lt}][\p{Ll}-]+)+ \z }xms) {
@@ -231,8 +243,10 @@ else {
 
   foreach my $line (@word_list) {
     chomp($line);
-    my ($id, $word, $freq) = split(/\s+/, $line);
-    
+    my ($id, @rest) = split(/\s+/, $line);
+    my $freq = pop(@rest);
+    my $word = join(' ', @rest);
+
     ### is word all uppercase?
     if ($word =~ m{ \A \p{IsUpper}+ \z }xms) {
       my $downcase = lc($word);
@@ -240,6 +254,7 @@ else {
       ### is downcase word known?
       unless ($exclude{$downcase}) {
 	print join("\t", $id, $word, $freq), "\n";
+	$count++;
       }
       next;
     }
@@ -249,6 +264,7 @@ else {
       ### does not occur at the beginning of the sentence
       unless ($word_pos{$id}->{1}) {
 	print join("\t", $id, $word, $freq), "\n";
+	$count++;
 	next;
       }
       
@@ -261,17 +277,19 @@ else {
       }
       
       print join("\t", $id, $word, $freq), "\n";
+      $count++;
       # print STDERR Dumper($word_pos{$id});
       next;
       
     }
     
     print join("\t", $id, $word, $freq), "\n";
-    
+    $count++;
   }
   
 }
 
+print STDERR "Number of unknown words: $count\n";
 
 1;
 

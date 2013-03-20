@@ -4,16 +4,17 @@
 ## Version: $Id: Makefile,v 0.0 2013/02/09 13:30:06 falk Exp $
 ## Keywords: 
 ## X-URL: 
+TEXT_DIR=${LOGO_DIR}/sources
 
 .IGNORE:
 
 LOGO_DIR=/home/falk/Logoscope/VC/logoscope/logoscope_2
 SCRIPT_DIR=${LOGO_DIR}/bin
 WEBSITES=${LOGO_DIR}/websites
-TEXT_DIR=${LOGO_DIR}/sources
 
 TODAY=$(shell date +"%Y-%m-%d")
 TODAY_FEEDS=feeds_${TODAY}.pl
+TEXT_DIR=${LOGO_DIR}/sources_${TODAY}
 
 get_today_feeds: ${SCRIPT_DIR}/get_links_4_today.pl ${WEBSITES}
 	perl $< ${WEBSITES} 
@@ -21,11 +22,12 @@ get_today_feeds: ${SCRIPT_DIR}/get_links_4_today.pl ${WEBSITES}
 get_today_articles: ${SCRIPT_DIR}/get_articles_4_date.pl ${TODAY_FEEDS}
 	perl $< ${TODAY_FEEDS} --source_dir=${TEXT_DIR} > ${TODAY}_articles.log
 
-get_2013-02-09_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-02-09.pl
-	perl $< feeds_2013-02-09.pl --source_dir=${TEXT_DIR} > 2013-02-09_articles.log
+get_2013-03-09_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-03-09.pl
+	perl $< feeds_2013-03-09.pl --source_dir=${LOGO_DIR}/sources_$(shell date +"%Y-%m-%d" --date 2013-03-09) > 2013-03-09_articles.log
 
-get_2013-02-12_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-02-12.pl
-	perl $< feeds_2013-02-12.pl --source_dir=${TEXT_DIR} > 2013-02-12_articles.log
+get_2013-03-18_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-03-18.pl
+	perl $< feeds_2013-03-18.pl --source_dir=${LOGO_DIR}/sources_$(shell date +"%Y-%m-%d" --date 2013-03-18) > 2013-03-18_articles.log
+
 
 #### prepare with tinyCC 
 #### 1) split into sentences
@@ -51,10 +53,10 @@ TINY_CC_HOME=${LOGO_HOME}/LCC/tinyCC2.1.1
 TINY_CC_BIN=${TINY_CC_HOME}/bin
 TINY_CC_PL=${TINY_CC_HOME}/perl
 TINY_CC_ABBREV=${TINY_CC_HOME}/bin/abbrev
-TINY_CC_SOURCES=${LOGO_HOME}/VC/logoscope/logoscope_2/sources
 
 #CORPUS_NAME=${TODAY}
-CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-09)
+CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-18)
+TINY_CC_SOURCES=${LOGO_HOME}/VC/logoscope/logoscope_2/sources_${CORPUS_NAME}
 
 TEMP=temp
 RES_DIR=${CORPUS_NAME}_tinyCC2_results
@@ -133,16 +135,52 @@ tinyCC_detok:
 
 MWES=${DATA_DIR}/multiwords
 PROLEX=${LOGO_HOME}/casen1.0/dela/Prolex-Unitex.dic
+CASEN=${LOGO_DIR}/stageRPF/${CORPUS_NAME}.casen.txt
+WS=${LOGO_DIR}/data/ws_known_forms.txt
 LOGO_KNOWN=${DATA_DIR}/known_forms
 
+# Number of words in Prolex: 118006
+# Number of Prolex words in logo known words list: 20194
+# Number of words in merged exclusion list: 549600
 merged_known_forms.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES}
 	perl $< --prolex=${PROLEX} --mwes=${MWES} ${LOGO_KNOWN} > $@
 
+# Number of words in merged exclusion list: 550865
+merged_known_forms_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES} ${CASEN}
+	perl $< --prolex=${PROLEX} --mwes=${MWES} ${CASEN} ${LOGO_KNOWN} > $@
+
+# Number of words in merged exclusion list: 2333312
+merged_known_forms_ws.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES}
+	perl $< --prolex=${PROLEX} --mwes=${MWES} ${WS} ${LOGO_KNOWN} > $@
+
+# Number of words in merged exclusion list: 2333425
+merged_known_forms_ws_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES} ${CASEN}
+	perl $< --prolex=${PROLEX} --mwes=${MWES} ${WS} ${LOGO_KNOWN} ${CASEN} > $@
+
+
+
 ###### filter resulting words using exclusion list in ${KNOWN_WORDS}
+
+
 KNOWN_WORDS=merged_known_forms.txt
+
+KNOWN_WORDS_CASEN=merged_known_forms_casen.txt
+
+KNOWN_WORDS_WS=merged_known_forms_ws.txt
+
+KNOWN_WORDS_CASEN_WS=merged_known_forms_ws_casen.txt
 
 ${CORPUS_NAME}_filtered.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS}
 	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS} > $@
+
+${CORPUS_NAME}_filtered_casen.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS_CASEN}
+	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS_CASEN} > $@
+
+${CORPUS_NAME}_filtered_ws.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS_WS}
+	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS_WS} > $@
+
+${CORPUS_NAME}_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS_CASEN_WS}
+	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS_CASEN_WS} > $@
 
 #### filter capitalised unknown words as follows: remove word if in
 #### most cases it is the first in the sentence and the downcase
@@ -150,24 +188,60 @@ ${CORPUS_NAME}_filtered.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.w
 ${CORPUS_NAME}_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
+${CORPUS_NAME}_capitalised_filtered_casen.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_casen.txt ${KNOWN_WORDS_CASEN}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen.txt --exc_list=${KNOWN_WORDS_CASEN} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_capitalised_filtered_ws.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_ws.txt ${KNOWN_WORDS_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_ws.txt --exc_list=${KNOWN_WORDS_WS} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_casen_ws.txt ${KNOWN_WORDS_CASEN_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen_ws.txt --exc_list=${KNOWN_WORDS_CASEN_WS} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
 
 #### filter capitalised unknown words as follows: 
 #### remove if downcase version is known
 ${CORPUS_NAME}_known_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
+${CORPUS_NAME}_known_capitalised_filtered_casen.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_casen.txt ${KNOWN_WORDS_CASEN}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen.txt --exc_list=${KNOWN_WORDS_CASEN} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_known_capitalised_filtered_ws.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_ws.txt ${KNOWN_WORDS_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_ws.txt --exc_list=${KNOWN_WORDS_WS} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_known_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_casen_ws.txt ${KNOWN_WORDS_CASEN_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen_ws.txt --exc_list=${KNOWN_WORDS_CASEN_WS} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
 #### remove all capitalised words
 ${CORPUS_NAME}_all_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_all_capitalised_filtered_casen.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_casen.txt ${KNOWN_WORDS_CASEN}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen.txt --exc_list=${KNOWN_WORDS_CASEN} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_all_capitalised_filtered_ws.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_ws.txt ${KNOWN_WORDS_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_ws.txt --exc_list=${KNOWN_WORDS_WS} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
+
+${CORPUS_NAME}_all_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered_casen_ws.txt ${KNOWN_WORDS_CASEN_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen_ws.txt --exc_list=${KNOWN_WORDS_CASEN_WS} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
 #### keep only capitalised words where the downcase version is not known
 ${CORPUS_NAME}_keep_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_keep_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} > $@
 
+${CORPUS_NAME}_keep_capitalised_filtered_casen.txt: ${SCRIPT_DIR}/filter_keep_capitalised.pl ${CORPUS_NAME}_filtered_casen.txt ${KNOWN_WORDS_CASEN}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen.txt --exc_list=${KNOWN_WORDS_CASEN} > $@
+
+${CORPUS_NAME}_keep_capitalised_filtered_ws.txt: ${SCRIPT_DIR}/filter_keep_capitalised.pl ${CORPUS_NAME}_filtered_ws.txt ${KNOWN_WORDS_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_ws.txt --exc_list=${KNOWN_WORDS_WS} > $@
+
+${CORPUS_NAME}_keep_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_keep_capitalised.pl ${CORPUS_NAME}_filtered_casen_ws.txt ${KNOWN_WORDS_CASEN_WS}
+	perl $< --word_list=${CORPUS_NAME}_filtered_casen_ws.txt --exc_list=${KNOWN_WORDS_CASEN_WS} > $@
+
 #### load database
 
 logo_db: ${SCRIPT_DIR}/load_db.pl
-	perl $< --db_name=logodb --db_user=logo --db_pw=scope --db_dir=${RES_DIR} --basename=${CORPUS_NAME}
+	perl $< --db_user=logo --db_pw=scope --db_dir=${RES_DIR} --basename=${CORPUS_NAME}
 
 load_db_new_words: ${SCRIPT_DIR}/load_db_unknown_words.pl
 	perl $< --db_name=logodb --db_user=logo --db_pw=scope --file=${CORPUS_NAME}_capitalised_filtered.txt
