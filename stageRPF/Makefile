@@ -11,7 +11,7 @@ SCRIPT_DIR=${LOGO_DIR}/bin
 WEBSITES=${LOGO_DIR}/websites
 
 UNITEX_CORPUS_DIR=${LOGO_HOME}/Unitex3.0/French/Corpus/
-CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-18)
+CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-20)
 
 ${CORPUS_NAME}.tagged.txt: taggerLogoscope.sh
 	rm ${UNITEX_CORPUS_DIR}/* ; \
