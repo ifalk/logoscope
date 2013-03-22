@@ -28,6 +28,9 @@ get_2013-03-09_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-03-09.p
 get_2013-03-18_articles: ${SCRIPT_DIR}/get_articles_4_date.pl feeds_2013-03-18.pl
 	perl $< feeds_2013-03-18.pl --source_dir=${LOGO_DIR}/sources_$(shell date +"%Y-%m-%d" --date 2013-03-18) > 2013-03-18_articles.log
 
+NEO_CORPUS=${LOGO_DIR}/stageRPF/corpusNeologismesFinal.xml
+neo_corpus_sources: ${SCRIPT_DIR}/make_neo_corpus_sources.pl ${NEO_CORPUS}
+	perl $< --source_dir=${LOGO_DIR}/sources_neo_corpus ${NEO_CORPUS} > neo_corpus_articles.log
 
 #### prepare with tinyCC 
 #### 1) split into sentences
@@ -54,8 +57,9 @@ TINY_CC_BIN=${TINY_CC_HOME}/bin
 TINY_CC_PL=${TINY_CC_HOME}/perl
 TINY_CC_ABBREV=${TINY_CC_HOME}/bin/abbrev
 
-#CORPUS_NAME=${TODAY}
-CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-18)
+# CORPUS_NAME=${TODAY}
+CORPUS_NAME=$(shell date +"%Y-%m-%d" --date 2013-03-20)
+# CORPUS_NAME=neo_corpus
 TINY_CC_SOURCES=${LOGO_HOME}/VC/logoscope/logoscope_2/sources_${CORPUS_NAME}
 
 TEMP=temp
@@ -92,6 +96,11 @@ RECODE_CMD=`which recode`
 
 #### data dir
 DATA_DIR=${LOGO_HOME}/VC/logoscope/logoscope_2/data
+
+.PHONY: process_with_tinyCC tinyCC_collect_convert tinyCC_number_sentences tinyCC_tokenize tinyCC_count tinyCC_index tinyCC_neighbour_cooc tinyCC_sentence_cooc tinyCC_detok merge_known_forms filtered capitalised_filtered known_capitalised_filtered all_capitalised_filtered keep_capitalised_filtered process_with_casen
+
+process_with_tinyCC: tinyCC_collect_convert tinyCC_number_sentences tinyCC_tokenize tinyCC_count tinyCC_index tinyCC_neighbour_cooc tinyCC_sentence_cooc tinyCC_detok
+	$(MAKE) $^
 
 tinyCC_collect_convert:
 	mkdir $(TEMP) ; \
@@ -130,6 +139,11 @@ perl ${TINY_CC_PL}/ssig.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${TEMP}/${CORPUS_
 tinyCC_detok: 
 	perl ${SCRIPT_DIR}/detok_multiwords_utf8.pl ${TEMP}/${CORPUS_NAME}.wordlist_tok ${RES_DIR}/${CORPUS_NAME}.words
 
+#### 
+
+process_with_casen: ${LOGO_DIR}/stageRPF/${CORPUS_NAME}.casen.txt
+	cd ${LOGO_DIR}/stageRPF; \
+$(MAKE) ${CORPUS_NAME}.casen.txt
 
 #### merge known words from various sources into one list
 
@@ -139,6 +153,10 @@ CASEN=${LOGO_DIR}/stageRPF/${CORPUS_NAME}.casen.txt
 WS=${LOGO_DIR}/data/ws_known_forms.txt
 LOGO_KNOWN=${DATA_DIR}/known_forms
 
+merge_known_forms: merged_known_forms.txt ${CORPUS_NAME}_merged_known_forms_casen.txt merged_known_forms_ws.txt ${CORPUS_NAME}_merged_known_forms_ws_casen.txt
+	$(MAKE) $^
+
+
 # Number of words in Prolex: 118006
 # Number of Prolex words in logo known words list: 20194
 # Number of words in merged exclusion list: 549600
@@ -146,7 +164,7 @@ merged_known_forms.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KN
 	perl $< --prolex=${PROLEX} --mwes=${MWES} ${LOGO_KNOWN} > $@
 
 # Number of words in merged exclusion list: 550865
-merged_known_forms_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES} ${CASEN}
+${CORPUS_NAME}_merged_known_forms_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES} ${CASEN}
 	perl $< --prolex=${PROLEX} --mwes=${MWES} ${CASEN} ${LOGO_KNOWN} > $@
 
 # Number of words in merged exclusion list: 2333312
@@ -154,7 +172,7 @@ merged_known_forms_ws.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO
 	perl $< --prolex=${PROLEX} --mwes=${MWES} ${WS} ${LOGO_KNOWN} > $@
 
 # Number of words in merged exclusion list: 2333425
-merged_known_forms_ws_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES} ${CASEN}
+${CORPUS_NAME}_merged_known_forms_ws_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} ${LOGO_KNOWN} ${MWES} ${CASEN}
 	perl $< --prolex=${PROLEX} --mwes=${MWES} ${WS} ${LOGO_KNOWN} ${CASEN} > $@
 
 
@@ -164,11 +182,14 @@ merged_known_forms_ws_casen.txt: ${SCRIPT_DIR}/make_exclusion_list.pl ${PROLEX} 
 
 KNOWN_WORDS=merged_known_forms.txt
 
-KNOWN_WORDS_CASEN=merged_known_forms_casen.txt
+KNOWN_WORDS_CASEN=${CORPUS_NAME}_merged_known_forms_casen.txt
 
 KNOWN_WORDS_WS=merged_known_forms_ws.txt
 
-KNOWN_WORDS_CASEN_WS=merged_known_forms_ws_casen.txt
+KNOWN_WORDS_CASEN_WS=${CORPUS_NAME}_merged_known_forms_ws_casen.txt
+
+filtered: ${CORPUS_NAME}_filtered.txt ${CORPUS_NAME}_filtered_casen.txt ${CORPUS_NAME}_filtered_ws.txt ${CORPUS_NAME}_filtered_casen_ws.txt
+	$(MAKE) $^
 
 ${CORPUS_NAME}_filtered.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPUS_NAME}.words ${KNOWN_WORDS}
 	perl $< --word_list=${RES_DIR}/${CORPUS_NAME}.words --exc_list=${KNOWN_WORDS} > $@
@@ -185,6 +206,11 @@ ${CORPUS_NAME}_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter.pl ${RES_DIR}/${CORPU
 #### filter capitalised unknown words as follows: remove word if in
 #### most cases it is the first in the sentence and the downcase
 #### version is known.
+
+capitalised_filtered: ${CORPUS_NAME}_capitalised_filtered.txt ${CORPUS_NAME}_capitalised_filtered_casen.txt ${CORPUS_NAME}_capitalised_filtered_ws.txt ${CORPUS_NAME}_capitalised_filtered_casen_ws.txt
+	$(MAKE) $^
+
+
 ${CORPUS_NAME}_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
@@ -200,6 +226,10 @@ ${CORPUS_NAME}_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_capitalis
 
 #### filter capitalised unknown words as follows: 
 #### remove if downcase version is known
+
+known_capitalised_filtered: ${CORPUS_NAME}_known_capitalised_filtered.txt ${CORPUS_NAME}_known_capitalised_filtered_casen.txt  ${CORPUS_NAME}_known_capitalised_filtered_ws.txt ${CORPUS_NAME}_known_capitalised_filtered_casen_ws.txt
+	$(MAKE) $^
+
 ${CORPUS_NAME}_known_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
@@ -213,6 +243,10 @@ ${CORPUS_NAME}_known_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_cap
 	perl $< --word_list=${CORPUS_NAME}_filtered_casen_ws.txt --exc_list=${KNOWN_WORDS_CASEN_WS} --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
 #### remove all capitalised words
+
+all_capitalised_filtered: ${CORPUS_NAME}_all_capitalised_filtered.txt ${CORPUS_NAME}_all_capitalised_filtered_casen.txt ${CORPUS_NAME}_all_capitalised_filtered_ws.txt ${CORPUS_NAME}_all_capitalised_filtered_casen_ws.txt
+	$(MAKE) $^
+
 ${CORPUS_NAME}_all_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
@@ -226,6 +260,10 @@ ${CORPUS_NAME}_all_capitalised_filtered_casen_ws.txt: ${SCRIPT_DIR}/filter_capit
 	perl $< --word_list=${CORPUS_NAME}_filtered_casen_ws.txt --exc_list=${KNOWN_WORDS_CASEN_WS} --discard --discard --words2sentences=${RES_DIR}/${CORPUS_NAME}.inv_w > $@
 
 #### keep only capitalised words where the downcase version is not known
+
+keep_capitalised_filtered: ${CORPUS_NAME}_keep_capitalised_filtered.txt ${CORPUS_NAME}_keep_capitalised_filtered_casen.txt ${CORPUS_NAME}_keep_capitalised_filtered_ws.txt ${CORPUS_NAME}_keep_capitalised_filtered_casen_ws.txt
+	$(MAKE) $^
+
 ${CORPUS_NAME}_keep_capitalised_filtered.txt: ${SCRIPT_DIR}/filter_keep_capitalised.pl ${CORPUS_NAME}_filtered.txt ${KNOWN_WORDS}
 	perl $< --word_list=${CORPUS_NAME}_filtered.txt --exc_list=${KNOWN_WORDS} > $@
 
