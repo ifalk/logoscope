@@ -131,13 +131,19 @@ while (my $line = <$fh>) {
   # next if ($word =~ m{ \. com \z}xms;
 
   ### contains '=' and '&'
+
   next if ($word =~ m{=} and $word =~ m{&});
+  next if ($word =~ m{@});
 
   ### matches a number 2e, 17e, etc.
   # next if ($word =~ m{ \A \d+ e r?\z}xms);
 
   ### matches a time 14H00, 23h00
   next if ($word =~ m{ \A [0-2]? [0-9] [Hh] [0-6]? [0-9]? \z }xms);
+
+  ### matches .com or .fr at the end
+  next if ($word =~ m{ \. (com|fr|org) / }xms);
+  next if ($word =~ m{ \. (com|fr|org) \z }xms);
 
   ### replace œ by oe
   $word =~ s{œ}{oe}xmsg;

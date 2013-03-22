@@ -99,6 +99,7 @@ use lib "/home/falk/perl5/lib/perl5";
 use Mojo::UserAgent;
 use LWP::UserAgent;
 
+use Logo::Utils;
 
 my $mojo_ua = Mojo::UserAgent->new();
 
@@ -442,11 +443,7 @@ foreach my $link (keys %feeds) {
     $title =~ tr/ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýÿ/AAAAAACEEEEIIIINOOOOOUUUUYaaaaaaceeeeiiiinooooouuuuyy/;
     $title =~ s{ \s+ }{_}xmsg;
 
-    $text =~ s{ \x{A0} }{ }xmsg; 
-    $text =~ s/[’\222]/'/g;
-    $text =~ s/\.+/./g;
-    $text =~ s/…/./g;
-    $text =~ s/,([^\s])/, $1/g;
+    $text = Logo::Utils::clean_text($text);
 
     # $out_filename = join('-', $out_filename, $title);
     $out_filename = join('.', $out_filename, 'txt');
