@@ -105,7 +105,9 @@ my $dbh = DBI->connect(
 
 my $dbname = join('', 'logodb', $opts{basename});
 
-$dbh->do("DROP DATABASE `$dbname`");
+eval { $dbh->do("DROP DATABASE `$dbname`"); };
+warn $@ if $@;
+
 $dbh->do("CREATE DATABASE `$dbname` CHARACTER SET utf8 COLLATE utf8_bin");
 $dbh->disconnect();
 
