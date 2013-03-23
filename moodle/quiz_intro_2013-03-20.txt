@@ -1,0 +1,12 @@
+Mots inconnus du 20/03/2013
+
+Ce quiz concerne les mots inconnus détectés dans les flux RSS du 20 mars 2013.
+Un mot est considéré inconnu s'il n'apparaît pas dans notre liste d'exclusion.
+
+On exclu également les mots (en majuscule) dont la version en minuscule est connue.
+
+L'objectif de ce quiz est d'étudier combien (et lesquels) de ces mots inconnus sont des candidats de néologismes intéressants.
+
+Pour faciliter votre décision, le quiz présente, pour chaque mot inconnu jusqu'à trois phrases contenant ce mot.
+
+Si vous ne connaissez pas un mot, vous pouvez utiliser tout le matériel à votre disposition (dictionnaires, wiki, moteurs de recherche) pour trouver son sens et estimer s'il s'agit d'un mot nouveau.
